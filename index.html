@@ -1,0 +1,892 @@
+集計
+
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport"
+  content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Darts Practice Tracker</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180-landscape.png">
+
+<style>
+:root{
+  --bg0:#070a10; --bg1:#0c1220;
+  --txt:#e6edf3; --muted:#9aa7b6;
+  --blue:#1f6feb; --green:#238636; --red:#c2463a;
+  --gold:#ffd700;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{
+  height:100%;
+  margin:0;
+  overscroll-behavior:none;
+  -webkit-text-size-adjust:100%;
+  overflow:hidden;
+}
+body{
+  background:
+    radial-gradient(900px 600px at 20% 10%, rgba(88,166,255,.18), transparent 60%),
+    linear-gradient(180deg,var(--bg0),var(--bg1));
+  color:var(--txt);
+  font-family:system-ui,-apple-system,sans-serif;
+  padding:20px;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:manipulation;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* ===== APP CONTAINER ===== */
+.app{
+  width:100%;
+  max-width:1400px;
+  height:100%;
+  max-height:900px;
+  display:grid;
+  grid-template-columns:1fr 1.5fr;
+  gap:24px;
+}
+
+.app.history-view{
+  grid-template-columns:1fr;
+}
+
+/* ===== LEFT PANEL ===== */
+.left{ 
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+  height:100%;
+  overflow-y:auto;
+}
+
+.modeRow{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.modeRow button{
+  padding:14px 20px;
+  border-radius:999px;
+  font-weight:900;
+  border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  transition:all .2s;
+  font-size:1rem;
+}
+.modeRow button:active{transform:scale(.95);}
+.modeRow button.on{background:rgba(31,111,235,.35);}
+.modeRow .reset{background:rgba(194,70,58,.35);}
+.modeRow .history{background:rgba(255,215,0,.25);}
+
+.statsBox{
+  padding:24px;
+  border-radius:20px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+}
+.statsBox h3{
+  margin:0 0 16px 0;
+  font-size:1.1rem;
+  letter-spacing:.1em;
+  opacity:0.9;
+}
+.statsRow{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-bottom:12px;
+}
+.statItem{
+  padding:12px;
+  border-radius:12px;
+  background:rgba(0,0,0,.2);
+}
+.statLabel{
+  font-size:0.85rem;
+  opacity:0.7;
+  margin-bottom:4px;
+}
+.statValue{
+  font-size:1.8rem;
+  font-weight:900;
+}
+
+.playerCard{
+  padding:24px;
+  border-radius:20px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  transition:all .3s;
+  margin-bottom:16px;
+}
+.playerCard.active{
+  outline:3px solid rgba(88,166,255,.6);
+  background:rgba(31,111,235,.12);
+}
+.playerCard h3{
+  margin:0 0 12px 0;
+  font-size:1.2rem;
+}
+.playerStats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  font-size:0.9rem;
+}
+.playerStats div{
+  padding:8px;
+  border-radius:8px;
+  background:rgba(0,0,0,.2);
+}
+
+/* ===== RIGHT PANEL ===== */
+.right{
+  display:grid;
+  grid-template-rows:auto auto auto auto;
+  gap:18px;
+  height:100%;
+}
+
+.turnBox{
+  display:flex;
+  justify-content:space-between;
+  padding:16px 24px;
+  border-radius:20px;
+  background:rgba(0,0,0,.25);
+  font-weight:700;
+  font-size:1.1rem;
+}
+
+.numGrid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  align-content:start;
+}
+.numGrid button{
+  padding:24px 0;
+  border-radius:20px;
+  font-size:1.6rem;
+  font-weight:1000;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.2);
+  color:#fff;
+  transition:all .15s;
+  min-height:70px;
+}
+.numGrid button:active{
+  transform:scale(.92);
+  background:rgba(255,255,255,.18);
+}
+.numGrid .bull{background:rgba(210,153,34,.45);}
+.numGrid .miss{background:rgba(48,54,61,.6);}
+
+.multi{ display:flex; gap:14px; }
+.multi button{
+  flex:1;
+  padding:22px 18px;
+  border-radius:999px;
+  font-weight:1000;
+  border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  transition:all .2s;
+  font-size:1.1rem;
+  min-height:70px;
+}
+.multi button:active{transform:scale(.95);}
+#sBtn{ background:rgba(35,134,54,.22); border-color:rgba(35,134,54,.35); }
+#dBtn{ background:rgba(31,111,235,.22); border-color:rgba(31,111,235,.35); }
+#tBtn{ background:rgba(194,70,58,.22); border-color:rgba(194,70,58,.35); }
+#sBtn.on{ background:var(--green); border-color:var(--green); box-shadow:0 0 16px rgba(35,134,54,.6); }
+#dBtn.on{ background:var(--blue);  border-color:var(--blue);  box-shadow:0 0 16px rgba(31,111,235,.6); }
+#tBtn.on{ background:var(--red);   border-color:var(--red);   box-shadow:0 0 16px rgba(194,70,58,.6); }
+
+.actions{
+  display:flex;
+  gap:16px;
+  justify-content:center;
+}
+.actions button{
+  padding:26px 40px;
+  border-radius:999px;
+  font-weight:900;
+  border:1px solid rgba(255,255,255,.2);
+  color:#fff;
+  min-width:220px;
+  min-height:80px;
+  font-size:1.2rem;
+  transition:all .2s;
+}
+.actions button:active:not(:disabled){transform:scale(.96);}
+.actions .cancel{ background:rgba(255,255,255,.18); }
+.actions .next{ background:rgba(31,111,235,.35); }
+.actions .finish{ background:rgba(255,215,0,.35); }
+button:disabled{ opacity:.45; cursor:not-allowed; }
+
+/* ===== HISTORY VIEW ===== */
+.historyPanel{
+  display:none;
+  flex-direction:column;
+  gap:20px;
+  height:100%;
+  overflow-y:auto;
+}
+.historyPanel.active{
+  display:flex;
+}
+.historyHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.historyHeader h2{
+  margin:0;
+  font-size:2rem;
+}
+.historyList{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.historyItem{
+  padding:24px;
+  border-radius:20px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  cursor:pointer;
+  transition:all .2s;
+}
+.historyItem:hover{
+  background:rgba(255,255,255,.1);
+  transform:translateX(4px);
+}
+.historyItem h3{
+  margin:0 0 12px 0;
+  font-size:1.3rem;
+}
+.historyMeta{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+  gap:12px;
+  font-size:0.9rem;
+  opacity:0.8;
+}
+
+/* ===== DETAIL VIEW ===== */
+.detailView{
+  display:none;
+  flex-direction:column;
+  gap:20px;
+  height:100%;
+  overflow-y:auto;
+}
+.detailView.active{
+  display:flex;
+}
+.detailHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.detailHeader h2{
+  margin:0;
+  font-size:1.8rem;
+}
+.detailGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+  gap:16px;
+}
+.detailCard{
+  padding:20px;
+  border-radius:16px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+}
+.detailCard h4{
+  margin:0 0 12px 0;
+  font-size:1rem;
+  opacity:0.7;
+}
+.detailCard .value{
+  font-size:2rem;
+  font-weight:900;
+}
+.scoreDistribution{
+  margin-top:20px;
+  padding:24px;
+  border-radius:20px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+}
+.scoreDistribution h3{
+  margin:0 0 20px 0;
+  font-size:1.3rem;
+}
+.distTable{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));
+  gap:12px;
+}
+.distItem{
+  padding:12px;
+  border-radius:12px;
+  background:rgba(0,0,0,.2);
+  text-align:center;
+}
+.distItem .score{
+  font-size:1.2rem;
+  font-weight:900;
+  margin-bottom:4px;
+}
+.distItem .count{
+  font-size:0.85rem;
+  opacity:0.7;
+}
+
+/* ===== OVERLAY ===== */
+.overlay{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.85);
+  z-index:9999;
+}
+.overlay.on{display:flex;}
+.overlayCard{
+  padding:48px 60px;
+  border-radius:32px;
+  background:linear-gradient(135deg,#ffd700,#ff00d4);
+  animation:pop .5s ease-out;
+  text-align:center;
+}
+@keyframes pop{
+  from{transform:scale(.3);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+.overlayCard div{
+  font-size:4rem;
+  font-weight:1000;
+  color:#fff;
+  text-shadow:3px 3px 10px rgba(0,0,0,.5);
+}
+
+@media (max-height:750px){
+  .app{gap:18px;}
+  .left{gap:16px;}
+  .playerCard{padding:18px;}
+  .statsBox{padding:18px;}
+  .numGrid button{padding:20px 0; font-size:1.4rem; min-height:60px;}
+  .multi button{padding:18px 16px; min-height:60px;}
+  .actions button{padding:22px 36px; min-height:70px; font-size:1.1rem;}
+}
+
+@media (max-width:750px) or (orientation: portrait){
+  body::before{
+    content:"このアプリはタブレットを横向きにしてご使用ください";
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--bg0);
+    color:var(--txt);
+    font-size:1.5rem;
+    font-weight:700;
+    text-align:center;
+    padding:40px;
+    z-index:10000;
+  }
+  .app{display:none;}
+}
+</style>
+
+</head>
+
+<body>
+<div class="app" id="app">
+
+  <!-- LEFT PANEL -->
+
+  <div class="left" id="leftPanel">
+    <div class="modeRow">
+      <button id="mode1" class="on" type="button">1 PLAYER</button>
+      <button id="mode2" type="button">2 PLAYERS</button>
+      <button id="historyBtn" class="history" type="button">HISTORY</button>
+      <button id="reset" class="reset" type="button">NEW SESSION</button>
+    </div>
+
+```
+<!-- Player 1 -->
+<div class="playerCard active" id="p1Card">
+  <h3>PLAYER 1</h3>
+  <div class="playerStats">
+    <div>総投数: <span id="p1Throws">0</span></div>
+    <div>総得点: <span id="p1Total">0</span></div>
+    <div>平均: <span id="p1Avg">0.0</span></div>
+    <div>BULL率: <span id="p1BullRate">0%</span></div>
+    <div>×3率: <span id="p1TripleRate">0%</span></div>
+    <div>×2率: <span id="p1DoubleRate">0%</span></div>
+  </div>
+</div>
+
+<!-- Player 2 -->
+<div class="playerCard" id="p2Card" style="display:none;">
+  <h3>PLAYER 2</h3>
+  <div class="playerStats">
+    <div>総投数: <span id="p2Throws">0</span></div>
+    <div>総得点: <span id="p2Total">0</span></div>
+    <div>平均: <span id="p2Avg">0.0</span></div>
+    <div>BULL率: <span id="p2BullRate">0%</span></div>
+    <div>×3率: <span id="p2TripleRate">0%</span></div>
+    <div>×2率: <span id="p2DoubleRate">0%</span></div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+
+  <div class="right" id="rightPanel">
+    <div class="turnBox">
+      <div>THIS TURN</div>
+      <div id="hist">— — —</div>
+    </div>
+
+```
+<div class="numGrid" id="numGrid"></div>
+
+<div class="multi">
+  <button id="sBtn" class="on" type="button">SINGLE ×1</button>
+  <button id="dBtn" type="button">DOUBLE ×2</button>
+  <button id="tBtn" type="button">TRIPLE ×3</button>
+</div>
+
+<div class="actions">
+  <button id="cancelBtn" class="cancel" disabled type="button">CANCEL</button>
+  <button id="nextBtn" class="next" disabled type="button">NEXT</button>
+  <button id="finishBtn" class="finish" type="button">FINISH</button>
+</div>
+```
+
+  </div>
+
+  <!-- HISTORY PANEL -->
+
+  <div class="historyPanel" id="historyPanel">
+    <div class="historyHeader">
+      <h2>Practice History</h2>
+      <button id="backBtn" class="modeRow" style="padding:14px 24px; border-radius:999px; background:rgba(255,255,255,.18);" type="button">BACK</button>
+    </div>
+    <div class="historyList" id="historyList"></div>
+  </div>
+
+  <!-- DETAIL VIEW -->
+
+  <div class="detailView" id="detailView">
+    <div class="detailHeader">
+      <h2 id="detailTitle">Session Detail</h2>
+      <button id="backDetailBtn" class="modeRow" style="padding:14px 24px; border-radius:999px; background:rgba(255,255,255,.18);" type="button">BACK</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+
+</div>
+
+<div id="overlay" class="overlay">
+  <div class="overlayCard">
+    <div id="ovText">Practice Saved!</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'darts_practice_history';
+
+  // state
+  let mode = 1;
+  let player = 0;
+  let session = {
+    players: [
+      { throws: [], bulls: 0, triples: 0, doubles: 0 },
+      { throws: [], bulls: 0, triples: 0, doubles: 0 }
+    ],
+    startTime: Date.now()
+  };
+
+  // turn state
+  let throwN = 1;
+  let turn = [null, null, null];
+  let pendingBase = null;
+  let locked = false;
+  let snapshot = null;
+
+  const el = id => document.getElementById(id);
+
+  function showOverlay(text){
+    el("ovText").textContent = text;
+    el("overlay").classList.add("on");
+    setTimeout(() => el("overlay").classList.remove("on"), 3000);
+  }
+
+  function takeSnapshotIfNeeded(){
+    if (!snapshot){
+      snapshot = JSON.parse(JSON.stringify(session));
+    }
+  }
+
+  function restoreTurn(){
+    if(!snapshot) return;
+    session = JSON.parse(JSON.stringify(snapshot));
+    throwN = 1;
+    turn = [null,null,null];
+    pendingBase = null;
+    locked = false;
+    snapshot = null;
+
+    el("cancelBtn").disabled = true;
+    el("nextBtn").disabled = true;
+    setMultiUI("sBtn");
+    updateUI();
+  }
+
+  function confirmScore(val, multiplier = 1){
+    const p = session.players[player];
+    p.throws.push(val);
+    
+    if(val === 50) p.bulls++;
+    if(multiplier === 3) p.triples++;
+    if(multiplier === 2) p.doubles++;
+
+    turn[throwN - 1] = val;
+    throwN++;
+
+    pendingBase = null;
+    el("cancelBtn").disabled = false;
+
+    if(throwN > 3){
+      locked = true;
+      el("nextBtn").disabled = false;
+    }
+    
+    setMultiUI("sBtn");
+    updateUI();
+  }
+
+  function pickNumber(base, kind){
+    if(locked) return;
+    takeSnapshotIfNeeded();
+
+    if(kind === "BULL"){
+      confirmScore(50, 1);
+      return;
+    }
+    if(kind === "MISS"){
+      confirmScore(0, 1);
+      return;
+    }
+
+    pendingBase = base;
+    el("cancelBtn").disabled = false;
+  }
+
+  function applyMultiplier(m){
+    if(locked) return;
+    if(pendingBase == null) return;
+    confirmScore(pendingBase * m, m);
+  }
+
+  function setMultiUI(onId){
+    ["sBtn","dBtn","tBtn"].forEach(id=>el(id).classList.toggle("on", id===onId));
+  }
+
+  function nextTurn(){
+    if(!locked) return;
+
+    snapshot = null;
+    pendingBase = null;
+    locked = false;
+    throwN = 1;
+    turn = [null,null,null];
+
+    el("cancelBtn").disabled = true;
+    el("nextBtn").disabled = true;
+
+    if(mode === 2){
+      player ^= 1;
+    }
+
+    setMultiUI("sBtn");
+    updateUI();
+  }
+
+  function calculateStats(playerData){
+    const throws = playerData.throws;
+    const total = throws.reduce((a,b)=>a+b, 0);
+    const avg = throws.length > 0 ? (total / throws.length).toFixed(1) : "0.0";
+    const bullRate = throws.length > 0 ? ((playerData.bulls / throws.length) * 100).toFixed(1) : "0.0";
+    const tripleRate = throws.length > 0 ? ((playerData.triples / throws.length) * 100).toFixed(1) : "0.0";
+    const doubleRate = throws.length > 0 ? ((playerData.doubles / throws.length) * 100).toFixed(1) : "0.0";
+    
+    return { total, avg, bullRate, tripleRate, doubleRate, throwCount: throws.length };
+  }
+
+  function getScoreDistribution(throws){
+    const dist = {};
+    throws.forEach(score => {
+      dist[score] = (dist[score] || 0) + 1;
+    });
+    return dist;
+  }
+
+  function updateUI(){
+    el("hist").textContent = turn.map(v => (v ?? "—")).join(" ");
+
+    for(let i = 0; i < 2; i++){
+      const stats = calculateStats(session.players[i]);
+      const prefix = `p${i+1}`;
+      el(prefix + "Throws").textContent = stats.throwCount;
+      el(prefix + "Total").textContent = stats.total;
+      el(prefix + "Avg").textContent = stats.avg;
+      el(prefix + "BullRate").textContent = stats.bullRate + "%";
+      el(prefix + "TripleRate").textContent = stats.tripleRate + "%";
+      el(prefix + "DoubleRate").textContent = stats.doubleRate + "%";
+    }
+
+    el("p1Card").classList.toggle("active", player===0);
+    el("p2Card").classList.toggle("active", player===1 && mode===2);
+  }
+
+  function setMode(m){
+    mode = m;
+    player = 0;
+    el("mode1").classList.toggle("on", mode===1);
+    el("mode2").classList.toggle("on", mode===2);
+    el("p2Card").style.display = mode === 2 ? "block" : "none";
+    updateUI();
+  }
+
+  function finishSession(){
+    const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const record = {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      mode,
+      players: session.players.map(p => ({
+        throws: p.throws,
+        bulls: p.bulls,
+        triples: p.triples,
+        doubles: p.doubles,
+        stats: calculateStats(p)
+      }))
+    };
+    history.unshift(record);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    
+    showOverlay("Practice Saved!");
+    
+    setTimeout(() => {
+      resetSession();
+    }, 1000);
+  }
+
+  function resetSession(){
+    session = {
+      players: [
+        { throws: [], bulls: 0, triples: 0, doubles: 0 },
+        { throws: [], bulls: 0, triples: 0, doubles: 0 }
+      ],
+      startTime: Date.now()
+    };
+    player = 0;
+    throwN = 1;
+    turn = [null,null,null];
+    pendingBase = null;
+    locked = false;
+    snapshot = null;
+    el("cancelBtn").disabled = true;
+    el("nextBtn").disabled = true;
+    setMultiUI("sBtn");
+    updateUI();
+  }
+
+  function showHistory(){
+    el("app").classList.add("history-view");
+    el("leftPanel").style.display = "none";
+    el("rightPanel").style.display = "none";
+    el("historyPanel").classList.add("active");
+    
+    const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const list = el("historyList");
+    list.innerHTML = "";
+    
+    if(history.length === 0){
+      list.innerHTML = '<div style="text-align:center; padding:40px; opacity:0.5;">No practice records yet</div>';
+      return;
+    }
+    
+    history.forEach(record => {
+      const date = new Date(record.date);
+      const dateStr = `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+      
+      const item = document.createElement('div');
+      item.className = 'historyItem';
+      item.onclick = () => showDetail(record);
+      
+      let metaHTML = '';
+      record.players.forEach((p, i) => {
+        if(record.mode === 1 && i > 0) return;
+        metaHTML += `
+          <div>
+            <strong>Player ${i+1}</strong><br>
+            投数: ${p.stats.throwCount} | 平均: ${p.stats.avg} | 総得点: ${p.stats.total}
+          </div>
+        `;
+      });
+      
+      item.innerHTML = `
+        <h3>${dateStr}</h3>
+        <div class="historyMeta">${metaHTML}</div>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  function showDetail(record){
+    el("historyPanel").classList.remove("active");
+    el("detailView").classList.add("active");
+    
+    const date = new Date(record.date);
+    const dateStr = `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+    el("detailTitle").textContent = `Session: ${dateStr}`;
+    
+    const content = el("detailContent");
+    content.innerHTML = "";
+    
+    record.players.forEach((p, i) => {
+      if(record.mode === 1 && i > 0) return;
+      
+      const section = document.createElement('div');
+      section.style.marginBottom = "32px";
+      
+      section.innerHTML = `
+        <h3 style="margin-bottom:16px;">Player ${i+1}</h3>
+        <div class="detailGrid">
+          <div class="detailCard">
+            <h4>総投数</h4>
+            <div class="value">${p.stats.throwCount}</div>
+          </div>
+          <div class="detailCard">
+            <h4>総得点</h4>
+            <div class="value">${p.stats.total}</div>
+          </div>
+          <div class="detailCard">
+            <h4>平均</h4>
+            <div class="value">${p.stats.avg}</div>
+          </div>
+          <div class="detailCard">
+            <h4>BULL率</h4>
+            <div class="value">${p.stats.bullRate}%</div>
+          </div>
+          <div class="detailCard">
+            <h4>×3率</h4>
+            <div class="value">${p.stats.tripleRate}%</div>
+          </div>
+          <div class="detailCard">
+            <h4>×2率</h4>
+            <div class="value">${p.stats.doubleRate}%</div>
+          </div>
+        </div>
+      `;
+      
+      const dist = getScoreDistribution(p.throws);
+      const distSection = document.createElement('div');
+      distSection.className = 'scoreDistribution';
+      distSection.innerHTML = '<h3>得点分布</h3><div class="distTable" id="dist' + i + '"></div>';
+      section.appendChild(distSection);
+      
+      const distTable = distSection.querySelector('.distTable');
+      Object.keys(dist).sort((a,b)=>b-a).forEach(score => {
+        const pct = ((dist[score] / p.throws.length) * 100).toFixed(1);
+        const item = document.createElement('div');
+        item.className = 'distItem';
+        item.innerHTML = `
+          <div class="score">${score}点</div>
+          <div class="count">${dist[score]}回 (${pct}%)</div>
+        `;
+        distTable.appendChild(item);
+      });
+      
+      content.appendChild(section);
+    });
+  }
+
+  function backToMain(){
+    el("app").classList.remove("history-view");
+    el("leftPanel").style.display = "flex";
+    el("rightPanel").style.display = "grid";
+    el("historyPanel").classList.remove("active");
+    el("detailView").classList.remove("active");
+  }
+
+  // build number grid
+  const g = el("numGrid");
+  for(let i=1;i<=20;i++){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = i;
+    b.onclick = () => pickNumber(i, "NUM");
+    g.appendChild(b);
+  }
+  const miss = document.createElement("button");
+  miss.type = "button";
+  miss.textContent = "MISS";
+  miss.className = "miss";
+  miss.onclick = () => pickNumber(0, "MISS");
+  g.appendChild(miss);
+
+  const bull = document.createElement("button");
+  bull.type = "button";
+  bull.textContent = "BULL";
+  bull.className = "bull";
+  bull.onclick = () => pickNumber(50, "BULL");
+  g.appendChild(bull);
+
+  // wire
+  el("sBtn").onclick = () => { setMultiUI("sBtn"); applyMultiplier(1); };
+  el("dBtn").onclick = () => { setMultiUI("dBtn"); applyMultiplier(2); };
+  el("tBtn").onclick = () => { setMultiUI("tBtn"); applyMultiplier(3); };
+
+  el("cancelBtn").onclick = restoreTurn;
+  el("nextBtn").onclick = nextTurn;
+  el("finishBtn").onclick = finishSession;
+
+  el("mode1").onclick = () => setMode(1);
+  el("mode2").onclick = () => setMode(2);
+  el("reset").onclick = resetSession;
+  
+  el("historyBtn").onclick = showHistory;
+  el("backBtn").onclick = backToMain;
+  el("backDetailBtn").onclick = () => {
+    el("detailView").classList.remove("active");
+    el("historyPanel").classList.add("active");
+  };
+
+  // init
+  setMultiUI("sBtn");
+  updateUI();
+})();
+</script>
+
+</body>
+</html>
